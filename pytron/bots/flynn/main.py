@@ -19,9 +19,9 @@ class PlayerBot(Bot):
 
         # start forward, turn right, start reverse, turn left
 
-        if self.warning_collision():
-            # state = self.next_state()
-            self.action = "reverse"
+        # if self.warning_collision():
+        #     # state = self.next_state()
+        #     self.action = "reverse"
 
         if self.action == "reverse":
             # breakpoint()
