@@ -160,7 +160,7 @@ class PlayerBot(Bot):
     @property
     def xy(self):
         camino = self.board.bots_path[self.id]
-        y, x = camino[-1]
+        x, y = camino[-1]
         return x, y
 
     @property
