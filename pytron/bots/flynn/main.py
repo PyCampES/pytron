@@ -25,6 +25,8 @@ class PlayerBot(Bot):
     def close_to_bot(self, margin=1) -> bool:
         x, y = self.board.bots_path[self.id][-1]
         for x0, y0 in self.board.used_positions:
+            if (x0, y0) in self.board.bots_path[self. id]:
+                continue
             if abs(x-x0) <= margin or abs(y-y0) <= margin:
                 return True        
         return False
