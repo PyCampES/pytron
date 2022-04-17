@@ -11,13 +11,17 @@ class PlayerBot(Bot):
         self.margin_iteration = 1
         self.action = "forward"
         self.goal = self.margin
-        self.state = ["f", "t", "r", "t"]
+        # self.
 
 
     def get_action(self, board):
+        self.board = board
 
         # start forward, turn right, start reverse, turn left
 
+        if self.warning_collision():
+            # state = self.next_state()
+            self.action = "reverse"
 
         if self.action == "reverse":
             # breakpoint()
@@ -48,6 +52,9 @@ class PlayerBot(Bot):
     def reverse(self):
         pass
 
+
+    def warning_collision(self):
+        return self.goal == 9
 
     # def forward(self):
 
