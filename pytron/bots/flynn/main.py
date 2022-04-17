@@ -14,6 +14,22 @@ class PlayerBot(Bot):
         # self.
 
 
+    def close_to_edge(self, margin=1) -> bool:
+        x, y = self.board.bots_path[self.id][-1]
+        return ((x <= margin) or 
+                (y <= margin) or
+                (x >= self.board_column_size-margin) or 
+                (y >= self.board_row_size-margin))
+
+
+    def close_to_bot(self, margin=1) -> bool:
+        x, y = self.board.bots_path[self.id][-1]
+        for x0, y0 in self.board.used_positions:
+            if abs(x-x0) <= margin or abs(y-y0) <= margin:
+                return True        
+        return False
+
+
     def get_action(self, board):
         self.board = board
 
