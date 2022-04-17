@@ -1,4 +1,25 @@
-from pytron.bot import Bot, Action
+from pytron.bot import Bot, Action, Orientation
+import copy
+
+
+COLLITION_SIDE = {
+    Orientation.North: {
+        Action.Right: (1, 0),
+        Action.Left: (-1, 0)
+    },
+    Orientation.South: {
+        Action.Right: (-1, 0),
+        Action.Left: (1, 0)
+    },
+    Orientation.East: {
+        Action.Right: (0, 1),
+        Action.Left: (0, -1)
+    },
+    Orientation.West: {
+        Action.Right: (0, -1),
+        Action.Left: (0, 1)
+    }
+}
 
 
 class PlayerBot(Bot):
@@ -39,6 +60,7 @@ class PlayerBot(Bot):
         # breakpoint()
         if self.turning:
             self.turning = False
+            self.turning_side = Action.Left
             return Action.Right
 
         if self.state == "forward" and (self.close_to_bot() or self.close_to_edge()):
@@ -46,21 +68,18 @@ class PlayerBot(Bot):
             self.current = 0
             self.n_cycles = 0
             self.turning = True
-            return Action.Right
+            self.turning_side = Action.Right
+
+            return self.turning_side
 
         return getattr(self, self.state)()
 
-        # if self.state == "reverse":
-        #     return self.reverse()
-        # else:
-        #     return self.forward()
 
     def forward(self):
-        # right, right, margin, right, margin, right, margin*2, right, margin*2,
         print(f"forward {self.n_cycles=} {self.current=} {self.goal=}")
 
         if self.current == self.goal:
-            self.current = 0
+            self.current = 1
             if self.n_cycles:
                 self.n_cycles = False
                 self.margin_iteration += 1
@@ -77,67 +96,48 @@ class PlayerBot(Bot):
 
     def reverse(self):
         print(f"reverse {self.n_cycles=} {self.current=} {self.goal=}")
+        if not self.collision_forward():
+            return Action.Forward
+        if self.collision_turning_side():
+            if self.turning_side == Action.Right:
+                self.turning_side = Action.Left
+            elif self.turning_side == Action.Left:
+                self.turning_side = Action.Right
 
-        if self.current == self.goal-1:
-            self.current = 0
-            if self.n_cycles:
-                self.n_cycles = False
-                self.margin_iteration -= 1
-                self.goal = self.margin_iteration * self.margin
-            else:
-                self.n_cycles = True
+        return self.turning_side
 
-            print("LEFT")
-            return Action.Left
+    @property
+    def xy(self):
+        camino = self.board.bots_path[self.id]
+        x, y = camino[-1]
+        print(camino[-1])
+        return x, y
 
-        self.current += 1
-        print("FORWARD")
-        return Action.Forward
+    def collision_forward(self):
+        current_orientation = self.board.bots_orientation[self.id]
+        x, y = copy.deepcopy(self.xy)
+        if current_orientation == Orientation.North:
+            y -= 1
+        elif current_orientation == Orientation.South:
+            y += 1
+        elif current_orientation == Orientation.East:
+            x += 1
+        else:
+            x -= 1
 
+        print(f"next position {x=} {y=} {current_orientation=}")
+        if (x, y) in self.board.bots_path[self.id]:
+            return True
+        return False
 
-    def warning_collision(self):
-        return self.goal == 9
+    def collision_turning_side(self):
+        current_orientation = self.board.bots_orientation[self.id]
+        x, y = copy.deepcopy(self.xy)
 
-    # def forward(self):
-
-
-    #     if self.n_forwards == 9:
-    #         # Return to same n_forwards
-    #         self.n_forwards -= self.margin
-    #         self.margin -= 1
-    #         self.n_cycles = 1
-    #         print("RIGHT TURN")
-    #         self.action = "reverse"
-    #         return Action.Right
-    #     print(f"forward {self.n_cycles=} {self.n_forwards=} {self.n_current_forwards=}")
-
-    #     if self.n_current_forwards == self.n_forwards:
-    #         if self.n_cycles == 1:
-    #             self.n_cycles = 0
-    #             self.n_forwards += self.margin
-    #         else:
-    #             self.n_cycles += 1
-    #         self.n_current_forwards = 0
-    #         print("RIGHT")
-    #         return Action.Right
-    #     self.n_current_forwards += 1
-    #     print("FORWARD")
-    #     return Action.Forward
-
-    # def reverse(self):
-    #     print(f"reverse {self.n_cycles=} {self.n_forwards=} {self.n_current_forwards=} {self.margin=}")
-    #     if self.n_forwards == 0:
-    #         self.is_reverse = False
-
-    #     if self.n_current_forwards == self.n_forwards-1:
-    #         if self.n_cycles == 1:
-    #             self.n_cycles = 0
-    #             self.n_forwards -= self.margin
-    #         else:
-    #             self.n_cycles += 1
-    #         self.n_current_forwards = 0
-    #         print("LEFT")
-    #         return Action.Left
-    #     self.n_current_forwards += 1
-    #     print("FORWARD")
-    #     return Action.Forward
+        nextx, nexty = COLLITION_SIDE[current_orientation][self.turning_side]
+        x += nextx
+        y += nexty
+        print(f"next position {x=} {y=} {current_orientation=}")
+        if (x, y) in self.board.bots_path[self.id]:
+            return True
+        return False
