@@ -154,7 +154,7 @@ class PlayerBot(Bot):
                 yd1 -= delta + 1
         all_positions = self.board.bots_path[self.id] + \
             list(self.board.used_positions)
-        return (y, x) in all_positions or (yd, xd) in all_positions or (yd1, xd1) in all_positions \
+        return (x, y) in all_positions or (xd, yd) in all_positions or (xd1, yd1) in all_positions \
             or self.toco_borde(xd, yd)
 
     @property
@@ -167,8 +167,8 @@ class PlayerBot(Bot):
     def inclinacion(self):
         camino = self.board.bots_path[self.id]
         try:
-            y1, x1 = camino[self.recta_inicial]
-            y2, x2 = camino[self.recta_inicial+2]
+            x1, y1 = camino[self.recta_inicial]
+            x2, y2 = camino[self.recta_inicial+2]
             norte = y1 - y2 > 0
             oeste = x1 - x2 > 0
             if norte and oeste:
