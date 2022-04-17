@@ -115,7 +115,7 @@ class PlayerBot(Bot):
         if (abs(collx-x) == self.margin-1 and abs(colly-y) == 0) or \
             (abs(collx-x) == 0 and abs(colly-y) == self.margin-1):
             # TODO Aqui tu amazing function!
-            pass
+            print("😍😍😍😍😍")
 
         if not self.collision_forward():
             return Action.Forward
