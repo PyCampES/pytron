@@ -30,9 +30,10 @@ class PlayerBot(Bot):
         self.current = 0
         self.margin = 3
         self.margin_iteration = 1
-        self.state = "forward"
-        self.goal = self.margin
-        self.turning = False
+        self.state = "forward_small_to_big"
+        self.goal = None
+        self.turning_big = False
+        self.turning_small = False
 
 
     def close_to_edge(self, margin=1) -> bool:
@@ -58,26 +59,41 @@ class PlayerBot(Bot):
 
         # Check when spiral is going big if it collides with something
         # breakpoint()
-        if self.turning:
-            self.turning = False
+        if self.turning_big:
+            self.turning_big = False
             self.turning_side = Action.Left
             return Action.Right
 
-        if self.state == "forward" and (self.close_to_bot() or self.close_to_edge()):
+        if self.state == "forward_small_to_big" and (self.close_to_bot() or self.close_to_edge()):
             self.collision_point = copy.deepcopy(self.xy)
             self.state = "reverse"
             self.current = 0
             self.n_cycles = 0
-            self.turning = True
+            self.turning_big = True
             self.turning_side = Action.Right
+
+            return self.turning_side
+
+        if self.turning_small:
+            self.turning_small = False
+            self.turning_side = Action.Right
+            return Action.Left
+
+
+        if self.state == "forward_big_to_small" and (self.close_to_bot() or self.close_to_edge() or self.goal == 0):
+            self.collision_point = copy.deepcopy(self.xy)
+            self.state = "reverse"
+            self.turning_small = True
+            self.turning_side = Action.Left
 
             return self.turning_side
 
         return getattr(self, self.state)()
 
-
-    def forward(self):
-        print(f"forward {self.n_cycles=} {self.current=} {self.goal=}")
+    def forward_small_to_big(self):
+        print(f"forward_small_to_big {self.n_cycles=} {self.current=} {self.goal=}")
+        if self.goal is None:
+            self.goal = self.margin
 
         if self.current == self.goal:
             self.current = 1
@@ -92,8 +108,34 @@ class PlayerBot(Bot):
             return Action.Right
 
         self.current += 1
-        print("FORWARD")
+        print("forward_small_to_big")
         return Action.Forward
+
+    def forward_big_to_small(self, goal_size=10, orientation=Orientation.North, side="right"):
+        print(f"forward_big_to_small {self.n_cycles=} {self.current=} {self.goal=}")
+
+        if self.goal is None:
+            self.margin = 2
+            self.goal = goal_size - (goal_size % self.margin)
+            self.margin_iteration = 1
+            self.current = 1
+            self.n_cycles = False
+
+        if self.current == self.goal:
+            self.current = 1
+            if self.n_cycles:
+                self.n_cycles = False
+                self.goal -= self.margin
+            else:
+                self.n_cycles = True
+
+            print("RIGHT")
+            return Action.Right
+
+        self.current += 1
+        print("forward_small_to_big")
+        return Action.Forward
+
 
     def reverse(self):
         print(f"reverse {self.n_cycles=} {self.current=} {self.goal=}")
@@ -115,6 +157,8 @@ class PlayerBot(Bot):
         if (abs(collx-x) == self.margin-1 and abs(colly-y) == 0) or \
             (abs(collx-x) == 0 and abs(colly-y) == self.margin-1):
             # TODO Aqui tu amazing function!
+            self.goal = None
+            self.forward_big_to_small(10)
             print("😍😍😍😍😍")
 
         if not self.collision_forward():
