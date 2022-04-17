@@ -64,6 +64,7 @@ class PlayerBot(Bot):
             return Action.Right
 
         if self.state == "forward" and (self.close_to_bot() or self.close_to_edge()):
+            self.collision_point = copy.deepcopy(self.xy)
             self.state = "reverse"
             self.current = 0
             self.n_cycles = 0
@@ -99,10 +100,25 @@ class PlayerBot(Bot):
         if not self.collision_forward():
             return Action.Forward
         if self.collision_turning_side():
+            self.state = "exitting"
             if self.turning_side == Action.Right:
                 self.turning_side = Action.Left
             elif self.turning_side == Action.Left:
                 self.turning_side = Action.Right
+
+        return self.turning_side
+
+    def exitting(self):
+        print(f"exitting {self.n_cycles=} {self.current=} {self.goal=}")
+        collx, colly = self.collision_point
+        x, y = self.xy
+        if (abs(collx-x) == self.margin-1 and abs(colly-y) == 0) or \
+            (abs(collx-x) == 0 and abs(colly-y) == self.margin-1):
+            # TODO Aqui tu amazing function!
+            pass
+
+        if not self.collision_forward():
+            return Action.Forward
 
         return self.turning_side
 
