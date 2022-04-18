@@ -32,8 +32,10 @@ class PlayerBot(Bot):
         self.margin_iteration = 1
         self.state = "forward_small_to_big"
         self.goal = None
+        self.is_turning = False
         self.turning_big = False
         self.turning_small = False
+        self.current_turn_action = None
 
 
     def close_to_edge(self, margin=1) -> bool:
@@ -53,45 +55,46 @@ class PlayerBot(Bot):
                 return True
         return False
 
+    def opposite_turn(self, turn_action):
+        if turn_action == Action.Right:
+            self.current_turn_action = Action.Left
+        elif turn_action == Action.Left:
+            self.current_turn_action = Action.Right
+
+    def turning(self):
+        self.is_turning = False if self.is_turning else True
+        old_turn_action = self.current_turn_action
+        # Changing to opposite turn action to start reverse
+        # if self.second_turn
+        self.opposite_turn(self.current_turn_action)
+        self.second_turn = True
+        return old_turn_action
 
     def get_action(self, board):
         self.board = board
 
         # Check when spiral is going big if it collides with something
-        # breakpoint()
-        if self.turning_big:
-            self.turning_big = False
-            self.turning_side = Action.Left
-            return Action.Right
+        if self.is_turning:
+            return self.turning()
 
         if self.state == "forward_small_to_big" and (self.close_to_bot() or self.close_to_edge()):
             self.collision_point = copy.deepcopy(self.xy)
             self.state = "reverse"
             self.current = 0
             self.n_cycles = 0
-            self.turning_big = True
-            self.turning_side = Action.Right
-
-            return self.turning_side
-
-        if self.turning_small:
-            self.turning_small = False
-            self.turning_side = Action.Right
-            return Action.Left
-
+            breakpoint()
+            return self.turning()
 
         if self.state == "forward_big_to_small" and (self.close_to_bot() or self.close_to_edge() or self.goal == 0):
             self.collision_point = copy.deepcopy(self.xy)
             self.state = "reverse"
-            self.turning_small = True
-            self.turning_side = Action.Left
-
             return self.turning_side
 
         return getattr(self, self.state)()
 
-    def forward_small_to_big(self):
+    def forward_small_to_big(self, turn_action=Action.Right):
         print(f"forward_small_to_big {self.n_cycles=} {self.current=} {self.goal=}")
+        self.current_turn_action = turn_action
         if self.goal is None:
             self.goal = self.margin
 
@@ -111,8 +114,9 @@ class PlayerBot(Bot):
         print("forward_small_to_big")
         return Action.Forward
 
-    def forward_big_to_small(self, goal_size=10, orientation=Orientation.North, side="right"):
+    def forward_big_to_small(self, goal_size=10, orientation=Orientation.North, turn_action=Action.Left):
         print(f"forward_big_to_small {self.n_cycles=} {self.current=} {self.goal=}")
+        self.current_turn_action = turn_action
 
         if self.goal is None:
             self.margin = 2
